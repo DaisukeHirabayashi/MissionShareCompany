@@ -1,0 +1,1 @@
+export const COMPANY_UPDATE = "COMPANY_UPDATE";
