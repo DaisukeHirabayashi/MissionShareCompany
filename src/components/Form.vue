@@ -1,15 +1,9 @@
 <template>
   <div class="Form">
-    <form class="p-5">
-      <h2>{{ formData.displayname }}</h2>
-      <div class="form-group">
-        <input
-          type="text"
-          class="form-control"
-          :placeholder="formData.placeholder"
-          v-model="formData.formText"
-        />
-      </div>
+    <form class="p-3">
+      <v-card-title>{{ formData.displayname }}</v-card-title>
+      <v-text-field :label="formData.placeholder" v-model="formData.formText">
+      </v-text-field>
     </form>
   </div>
 </template>

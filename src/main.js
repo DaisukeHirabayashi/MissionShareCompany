@@ -5,7 +5,8 @@ import firebase from "firebase";
 import store from "./store";
 import "./assets/app.css";
 import "./assets/detail.css";
-import vuetify from './plugins/vuetify';
+import vuetify from "./plugins/vuetify";
+import { VueLoading } from "vue-loading-template";
 
 Vue.config.productionTip = false;
 

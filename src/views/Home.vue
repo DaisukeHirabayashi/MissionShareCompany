@@ -1,81 +1,429 @@
 <template>
   <div class="home">
     <div id="app">
-      <header class="header">
-        <h1>インターン情報サイト</h1>
-        <!-- ログイン時にはフォームとログアウトボタンを表示 -->
-        <div v-if="user.uid" key="login">
-          [{{ user.displayName }}]
-          <button type="button" @click="doLogout">ログアウト</button>
-        </div>
-        <!-- 未ログイン時にはログインボタンを表示 -->
-        <div v-else key="logout">
-          <button type="button" @click="doLogin">ログイン</button>
-        </div>
-      </header>
-
-      <!--Firebase から取得したリストを描画（トランジション付き）-->
-      <transition-group name="company" tag="div" class="list content">
-        <section
-          v-for="{ key, name, day, place, feel } in companys"
-          :key="key"
-          class="item"
+      <template v-if="this.loading">
+        <vue-loading
+          type="balls"
+          color="#333"
+          :size="{ width: '10%', height: '10%' }"
+        ></vue-loading>
+      </template>
+      <template v-else>
+        <v-carousel
+          cycle
+          height="600"
+          hide-delimiter-background
+          show-arrows-on-hover
         >
-          <router-link
-            to="./detail"
-            @click.native="companySend({ key, name, day, place, feel })"
-            >{{ name }}</router-link
-          >
-          <button type="button" @click="deleteCompany(key)">削除</button>
-        </section>
-      </transition-group>
+          <v-carousel-item v-for="(item, i) in items" :key="i" :src="item.src">
+            <v-container fill-height>
+              <v-layout align-center>
+                <v-flex>
+                  <div class="box">
+                    <div>
+                      <h3 class="display-3 p3">会社情報サイト</h3>
+                      <p>
+                        <span class="subheading"
+                          >その会社で働くことができるかどうかをユーザー同士で共有するサイトです</span
+                        >
+                      </p>
+                    </div>
+                  </div>
+                </v-flex>
+              </v-layout>
+            </v-container>
+          </v-carousel-item>
+        </v-carousel>
+        <v-container v-if="!user.uid">
+          <h3 class="p-3">まずは右上のボタンからログイン!</h3>
+        </v-container>
+        <v-container v-else>
+          <h3 class="p-3" v-if="isMain">本社用検索ページ</h3>
+          <h3 class="p-3" v-else>支社用検索ページ</h3>
+          <v-row class="mt-5 mx-5">
+            <v-col>
+              <v-select
+                v-model="checkNames"
+                :items="prefectures"
+                label="Select"
+                multiple
+                chips
+                hint="都道府県絞り込み"
+                persistent-hint
+              ></v-select>
+            </v-col>
+          </v-row>
+          <v-row class="mx-5 mb-5" justify="start">
+            <v-col cols="6">
+              <v-checkbox v-model="selectAll" label="select all"></v-checkbox>
+            </v-col>
+            <v-col cols="6">
+              <v-switch
+                v-model="isMain"
+                label="本社、支社の切り替え"
+                color="red"
+                hide-details
+              ></v-switch>
+            </v-col>
+          </v-row>
+          <!--Firebase から取得したリストを描画（トランジション付き）-->
+          <template v-if="isShowMain">
+            <v-alert type="warning" v-if="filteredCompanys.length <= 0">
+              表示する結果がありません。
+            </v-alert>
+            <v-list two-line subheader shaped>
+              <v-subheader>本社</v-subheader>
+              <v-list-item-group color="primary">
+                <v-list-item
+                  v-for="{
+                    name,
+                    key,
+                    prefecture,
+                    address,
+                    url,
+                    phonenumber
+                  } in filteredCompanys"
+                >
+                  <v-list-item-content
+                    @click="
+                      companySend({
+                        key,
+                        name,
+                        prefecture,
+                        address,
+                        url,
+                        phonenumber,
+                        select: 'main-company'
+                      })
+                    "
+                  >
+                    <v-list-item-title
+                      style="text-align: left;"
+                      class="ml-4"
+                      v-text="prefecture"
+                    ></v-list-item-title>
+                    <v-list-item-subtitle
+                      style="text-align: left;"
+                      class="ml-4"
+                      v-text="name"
+                    ></v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list-item-group>
+            </v-list>
+          </template>
+          <!--Firebase から取得したリストを描画（支社）-->
+          <template v-if="isShowSub">
+            <v-alert type="warning" v-if="filteredCompanys.length <= 0">
+              表示する結果がありません。
+            </v-alert>
+            <v-list two-line subheader shaped>
+              <v-subheader>支社</v-subheader>
+              <v-list-item-group color="primary">
+                <v-list-item
+                  v-for="{
+                    name,
+                    key,
+                    prefecture,
+                    address,
+                    url,
+                    phonenumber
+                  } in filteredSubCompanys"
+                >
+                  <v-list-item-content
+                    @click="
+                      companySend({
+                        key,
+                        name,
+                        prefecture,
+                        address,
+                        url,
+                        phonenumber,
+                        select: 'sub-company'
+                      })
+                    "
+                  >
+                    <v-list-item-title
+                      style="text-align: left;"
+                      class="ml-4"
+                      v-text="prefecture"
+                    ></v-list-item-title>
+                    <v-list-item-subtitle
+                      style="text-align: left;"
+                      class="ml-4"
+                      v-text="name"
+                    ></v-list-item-subtitle>
+                  </v-list-item-content>
+                </v-list-item>
+              </v-list-item-group>
+            </v-list>
+          </template>
+        </v-container>
+        <v-footer class="font-weight-medium">
+          <v-col class="text-center" cols="12">
+            {{ new Date().getFullYear() }} — <strong>Job Serch</strong>
+          </v-col>
+        </v-footer>
+      </template>
     </div>
   </div>
 </template>
-
+<style>
+.box {
+  padding-top: 20px;
+  padding-bottom: 10px;
+  font-weight: bold;
+  color: #6091d3; /*文字色*/
+  background: #fff;
+  border: solid 3px #6091d3; /*線*/
+  border-radius: 10px; /*角の丸み*/
+}
+</style>
 <script>
 // firebase モジュール
 import firebase from "firebase";
 import { mapState, mapMutations } from "vuex";
 import { COMPANY_UPDATE } from "../store/mutation-types";
+import { VueLoading } from "vue-loading-template";
+
 export default {
+  components: {
+    VueLoading
+  },
   name: "home",
   data() {
     return {
+      isMain: true,
+      loading: true,
+      checkNames: [
+        "北海道",
+        "青森県",
+        "岩手県",
+        "宮城県",
+        "秋田県",
+        "山形県",
+        "福島県",
+        "茨城県",
+        "栃木県",
+        "群馬県",
+        "埼玉県",
+        "千葉県",
+        "東京都",
+        "神奈川県",
+        "新潟県",
+        "富山県",
+        "石川県",
+        "福井県",
+        "山梨県",
+        "長野県",
+        "岐阜県",
+        "静岡県",
+        "愛知県",
+        "三重県",
+        "滋賀県",
+        "京都府",
+        "大阪府",
+        "兵庫県",
+        "奈良県",
+        "和歌山県",
+        "鳥取県",
+        "島根県",
+        "岡山県",
+        "広島県",
+        "山口県",
+        "徳島県",
+        "香川県",
+        "愛媛県",
+        "高知県",
+        "福岡県",
+        "佐賀県",
+        "長崎県",
+        "熊本県",
+        "大分県",
+        "宮崎県",
+        "鹿児島県",
+        "沖縄県"
+      ],
+      headers: [
+        {
+          text: "Company",
+          align: "left",
+          sortable: false,
+          value: "name"
+        },
+        { text: "都道府県", value: "prefecture" }
+      ],
+      items: [
+        {
+          src:
+            "https://cdn.pixabay.com/photo/2017/06/09/07/37/notebook-2386034_1280.jpg"
+        },
+        {
+          src:
+            "https://pixnio.com/free-images/2017/07/30/2017-07-30-07-48-18-1000x750.jpg"
+        },
+        {
+          src:
+            "https://cdn.pixabay.com/photo/2015/02/02/11/09/office-620822_1280.jpg"
+        }
+      ],
+      prefectures: [
+        "北海道",
+        "青森県",
+        "岩手県",
+        "宮城県",
+        "秋田県",
+        "山形県",
+        "福島県",
+        "茨城県",
+        "栃木県",
+        "群馬県",
+        "埼玉県",
+        "千葉県",
+        "東京都",
+        "神奈川県",
+        "新潟県",
+        "富山県",
+        "石川県",
+        "福井県",
+        "山梨県",
+        "長野県",
+        "岐阜県",
+        "静岡県",
+        "愛知県",
+        "三重県",
+        "滋賀県",
+        "京都府",
+        "大阪府",
+        "兵庫県",
+        "奈良県",
+        "和歌山県",
+        "鳥取県",
+        "島根県",
+        "岡山県",
+        "広島県",
+        "山口県",
+        "徳島県",
+        "香川県",
+        "愛媛県",
+        "高知県",
+        "福岡県",
+        "佐賀県",
+        "長崎県",
+        "熊本県",
+        "大分県",
+        "宮崎県",
+        "鹿児島県",
+        "沖縄県"
+      ],
       user: {}, // ユーザー情報
-      companys: [], // 取得したメッセージを入れる配列
+      companys: [], // 取得した本社を入れる配列
+      subCompanys: [],
       input: "" // 入力したメッセージ
     };
+  },
+  mounted() {
+    setTimeout(() => {
+      this.loading = false;
+    }, 1000);
   },
   created() {
     firebase.auth().onAuthStateChanged(user => {
       this.user = user ? user : {};
-      const companyData = firebase.database().ref("company");
+      const companyData = firebase.database().ref("main-company");
+      const subCompanyData = firebase.database().ref("sub-company");
       if (user) {
         this.companys = [];
+        this.subCompanys = [];
         // company に変更があったときのハンドラを登録
         companyData.limitToLast(100).on("child_added", this.childAdded);
+        subCompanyData.limitToLast(100).on("child_added", this.subChildAdded);
       } else {
         // company に変更があったときのハンドラを解除
         companyData.limitToLast(100).off("child_added", this.childAdded);
       }
+      this.selectAll.set;
     });
+  },
+  computed: {
+    isShowMain: function() {
+      if (
+        this.isMain &&
+        this.filteredCompanys.length > 0 &&
+        this.filteredSubCompanys.length > 0
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    isShowSub: function() {
+      if (
+        !this.isMain &&
+        this.filteredCompanys.length > 0 &&
+        this.filteredSubCompanys.length > 0
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    selectAll: {
+      get: function() {
+        //authorsのチェックボックスのすべてにチェックが入ったかを判定
+        if (this.checkNames.length == this.prefectures.length) {
+          return true; //authorsにすべてチェックを入れるとselectAllはtrueとなりチェックが入る
+        } else {
+          return false;
+        }
+      },
+      set: function(value) {
+        //全選択のチェックボックスを操作した場合
+        //空の配列を用意
+        let checkArray = [];
+        //チェックが入った場合（trueでの判定）
+        if (value) {
+          this.prefectures.forEach(function(prefecture) {
+            checkArray.push(prefecture);
+          });
+        }
+        this.checkNames = checkArray;
+      }
+    },
+    filteredCompanys: function() {
+      var filterCompanys = [];
+
+      for (var i in this.companys) {
+        var company = this.companys[i];
+        this.checkNames.forEach(function(prefecture) {
+          if (prefecture == company.prefecture) {
+            filterCompanys.push(company);
+          }
+        });
+      }
+
+      return filterCompanys;
+    },
+    filteredSubCompanys: function() {
+      var filterCompanys = [];
+
+      for (var i in this.subCompanys) {
+        var company = this.subCompanys[i];
+        this.checkNames.forEach(function(prefecture) {
+          if (prefecture == company.prefecture) {
+            filterCompanys.push(company);
+          }
+        });
+      }
+
+      return filterCompanys;
+    }
   },
   methods: {
     // スクロール位置を一番下に移動
-    // ログイン処理
-    doLogin() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider);
-    },
     ...mapMutations({
       COMPANY_UPDATE
     }),
-    // ログアウト処理
-    doLogout() {
-      firebase.auth().signOut();
-      location.reload();
-    },
     scrollBottom() {
       this.$nextTick(() => {
         window.scrollTo(0, document.body.clientHeight);
@@ -87,26 +435,33 @@ export default {
       const company = snap.val();
       this.companys.push({
         key: snap.key,
-        day: company.day,
-        feel: company.feel,
-        place: company.place,
-        name: company.name
+        name: company.name,
+        prefecture: company.prefecture,
+        address: company.address,
+        url: company.url,
+        phonenumber: company.phonenumber
       });
       this.scrollBottom();
     },
-    deleteCompany(key) {
-      firebase
-        .database()
-        .ref("company/" + key)
-        .set({}); //会社情報の削除
-      firebase
-        .database()
-        .ref("comment/" + key)
-        .set({}); //ある会社に対するコメントの削除
-      location.reload();
+    subChildAdded(snap) {
+      const subCompany = snap.val();
+      this.subCompanys.push({
+        key: snap.key,
+        name: subCompany.name,
+        prefecture: subCompany.prefecture,
+        address: subCompany.address,
+        url: subCompany.url,
+        phonenumber: subCompany.phonenumber,
+        main_com_id: subCompany.main_com_id
+      });
+      this.scrollBottom();
+    },
+    sendDetail() {
+      document.location.href = "./detail";
     },
     companySend(str) {
       this.COMPANY_UPDATE(str); //会社情報を詳細画面に送る
+      this.sendDetail();
     }
   }
 };
