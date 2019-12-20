@@ -67,81 +67,82 @@
               </v-list-item-content>
             </v-layout>
           </v-list>
-
-          <div
-            v-if="this.ratingUser[0].answer == 'yes'"
-            class="mx-auto text-left p-3"
-          >
-            <div class="headline">説明会に行った人向け<br /></div>
-            <div class="p-3">
-              就職後この地方で働けますか?
-              <v-btn small depressed disabled color="primary">はい</v-btn>
-              <v-btn
-                small
-                depressed
-                color="error"
-                @click="
-                  updateVoting(
-                    'no',
-                    company.key,
-                    ratingUser[0].key,
-                    company.select
-                  )
-                "
-                >いいえ</v-btn
-              >
+          <v-list>
+            <div
+              v-if="this.ratingUser[0].answer == 'yes'"
+              class="mx-auto text-left p-3"
+            >
+              <div class="headline">説明会に行った人向け<br /></div>
+              <div class="p-3">
+                就職後この地方で働けますか?
+                <v-btn small depressed disabled color="primary">はい</v-btn>
+                <v-btn
+                  small
+                  depressed
+                  color="error"
+                  @click="
+                    updateVoting(
+                      'no',
+                      company.key,
+                      ratingUser[0].key,
+                      company.select
+                    )
+                  "
+                  >いいえ</v-btn
+                >
+              </div>
             </div>
-          </div>
-          <div
-            v-else-if="this.ratingUser[0].answer == 'no'"
-            class="mx-auto text-left p-3"
-          >
-            <div class="headline">説明会に行った人向け<br /></div>
-            <div class="p-3">
-              就職後この地方で働けますか?
-              <v-btn
-                small
-                depressed
-                color="primary"
-                @click="
-                  updateVoting(
-                    'yes',
-                    company.key,
-                    ratingUser[0].key,
-                    company.select
-                  )
-                "
-                >はい</v-btn
-              >
-              <v-btn small depressed disabled color="error">いいえ</v-btn>
+            <div
+              v-else-if="this.ratingUser[0].answer == 'no'"
+              class="mx-auto text-left p-3"
+            >
+              <div class="headline">説明会に行った人向け<br /></div>
+              <div class="p-3">
+                就職後この地方で働けますか?
+                <v-btn
+                  small
+                  depressed
+                  color="primary"
+                  @click="
+                    updateVoting(
+                      'yes',
+                      company.key,
+                      ratingUser[0].key,
+                      company.select
+                    )
+                  "
+                  >はい</v-btn
+                >
+                <v-btn small depressed disabled color="error">いいえ</v-btn>
+              </div>
             </div>
-          </div>
-          <template v-else>
-            <div class="headline">説明会に行った人向け<br /></div>
-            <div class="p-3">
-              就職後この地方で働けますか?
-              <v-btn
-                small
-                depressed
-                color="primary"
-                @click="voting('yes', company.key, company.select)"
-                >はい</v-btn
-              >
-              <v-btn
-                small
-                depressed
-                color="error"
-                @click="voting('no', company.key, company.select)"
-                >いいえ</v-btn
-              >
+            <template v-else>
+              <div class="headline">説明会に行った人向け<br /></div>
+              <div class="p-3">
+                就職後この地方で働けますか?
+                <v-btn
+                  small
+                  depressed
+                  color="primary"
+                  @click="voting('yes', company.key, company.select)"
+                  >はい</v-btn
+                >
+                <v-btn
+                  small
+                  depressed
+                  color="error"
+                  @click="voting('no', company.key, company.select)"
+                  >いいえ</v-btn
+                >
+              </div>
+            </template>
+            <div class="headline ml-4">みんなの意見<br /></div>
+            <div class="p-3 ml-4">
+              {{ this.manyAnswer[0].text }}(はい:{{
+                this.manyAnswer[0].yes
+              }},いいえ:{{ this.manyAnswer[0].no }})
             </div>
-          </template>
-          <div class="headline">みんなの意見<br /></div>
-          <div class="p-3">
-            {{ this.manyAnswer[0].text }}(はい:{{
-              this.manyAnswer[0].yes
-            }},いいえ:{{ this.manyAnswer[0].no }})
-          </div>
+          </v-list>
         </v-container>
         <v-container>
           <v-card class="p-3 text-left bg-lighten-4-blue">
@@ -155,22 +156,24 @@
                   image,
                   message,
                   companykey,
-                  ratings
+                  ratings,
+                  submitDay
                 } in reverseChats"
                 :key="key"
               >
                 <v-card flat>
                   <v-card-text>
-                    <v-row class="m-4" align="center">
+                    <v-row class="m-4" align="end">
                       <!-- <v-avatar color="grey" class="mr-4"></v-avatar> -->
                       <strong class="title ml-5">{{ name }}</strong>
-                      <v-spacer></v-spacer>
+                      <v-spacer>(投稿日:{{ submitDay }})</v-spacer>
                       <v-btn icon class="mr-5">
                         <span v-for="key in ratings">
                           <v-icon small color="yellow">star</v-icon>
                         </span>
                       </v-btn>
                     </v-row>
+
                     <v-row class="m-4">
                       <p class="ml-5">
                         {{ message }}
@@ -306,6 +309,16 @@ export default {
         voteitems[0].text = "この地方では働けない可能性が高いです";
         return voteitems;
       }
+    },
+    today: function() {
+      var today = new Date();
+      return (
+        today.getFullYear() +
+        "-" +
+        (today.getMonth() + 1) +
+        "-" +
+        today.getDate()
+      );
     }
   },
   methods: {
@@ -317,7 +330,8 @@ export default {
         image: message.image,
         message: message.message,
         companykey: message.companykey,
-        ratings: message.ratings
+        ratings: message.ratings,
+        submitDay: message.submitDay
       });
     },
     childRatingUserAdded(snap) {
@@ -351,7 +365,8 @@ export default {
               image: this.user.photoURL,
               companykey: sendkey,
               ratings: this.rating,
-              user: this.user.uid
+              user: this.user.uid,
+              submitDay: this.today
             },
             () => {
               this.input = ""; // フォームを空にする

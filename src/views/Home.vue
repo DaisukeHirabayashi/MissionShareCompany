@@ -66,12 +66,25 @@
               ></v-switch>
             </v-col>
           </v-row>
+          <v-row class="mt-5 mx-5">
+            <v-col>
+              <v-select
+                v-model="selectAreas"
+                :items="areas"
+                label="Select"
+                multiple
+                chips
+                hint="地方絞り込み"
+                persistent-hint
+              ></v-select>
+            </v-col>
+          </v-row>
           <!--Firebase から取得したリストを描画（トランジション付き）-->
-          <template v-if="isShowMain">
+          <template v-if="isMain">
             <v-alert type="warning" v-if="filteredCompanys.length <= 0">
               表示する結果がありません。
             </v-alert>
-            <v-list two-line subheader shaped>
+            <v-list v-else two-line subheader shaped>
               <v-subheader>本社</v-subheader>
               <v-list-item-group color="primary">
                 <v-list-item
@@ -113,11 +126,11 @@
             </v-list>
           </template>
           <!--Firebase から取得したリストを描画（支社）-->
-          <template v-if="isShowSub">
-            <v-alert type="warning" v-if="filteredCompanys.length <= 0">
+          <template v-if="!isMain">
+            <v-alert type="warning" v-if="filteredSubCompanys.length <= 0">
               表示する結果がありません。
             </v-alert>
-            <v-list two-line subheader shaped>
+            <v-list v-else two-line subheader shaped>
               <v-subheader>支社</v-subheader>
               <v-list-item-group color="primary">
                 <v-list-item
@@ -195,6 +208,16 @@ export default {
     return {
       isMain: true,
       loading: true,
+      areas: [
+        "北海道地方",
+        "東北地方",
+        "関東地方",
+        "中部地方",
+        "近畿地方",
+        "中国・四国地方",
+        "九州地方"
+      ],
+      selectAreas: [],
       checkNames: [
         "北海道",
         "青森県",
@@ -255,16 +278,13 @@ export default {
       ],
       items: [
         {
-          src:
-            "https://cdn.pixabay.com/photo/2017/06/09/07/37/notebook-2386034_1280.jpg"
+          src: require("../assets/homePhotos/page1.jpg")
         },
         {
-          src:
-            "https://pixnio.com/free-images/2017/07/30/2017-07-30-07-48-18-1000x750.jpg"
+          src: require("../assets/homePhotos/page2.jpg")
         },
         {
-          src:
-            "https://cdn.pixabay.com/photo/2015/02/02/11/09/office-620822_1280.jpg"
+          src: require("../assets/homePhotos/page3.jpg")
         }
       ],
       prefectures: [
@@ -346,28 +366,6 @@ export default {
     });
   },
   computed: {
-    isShowMain: function() {
-      if (
-        this.isMain &&
-        this.filteredCompanys.length > 0 &&
-        this.filteredSubCompanys.length > 0
-      ) {
-        return true;
-      } else {
-        return false;
-      }
-    },
-    isShowSub: function() {
-      if (
-        !this.isMain &&
-        this.filteredCompanys.length > 0 &&
-        this.filteredSubCompanys.length > 0
-      ) {
-        return true;
-      } else {
-        return false;
-      }
-    },
     selectAll: {
       get: function() {
         //authorsのチェックボックスのすべてにチェックが入ったかを判定
@@ -392,30 +390,186 @@ export default {
     },
     filteredCompanys: function() {
       var filterCompanys = [];
-
+      var areaPrefecture = [];
+      var checkPrefecture = [];
+      this.checkNames.forEach(function(pref) {
+        checkPrefecture.push(pref);
+      });
+      this.selectAreas.forEach(function(area) {
+        if (area == "北海道地方") {
+          areaPrefecture.push("北海道");
+        } else if (area == "東北地方") {
+          areaPrefecture.push(
+            "青森県",
+            "岩手県",
+            "宮城県",
+            "秋田県",
+            "山形県",
+            "福島県"
+          );
+        } else if (area == "関東地方") {
+          areaPrefecture.push(
+            "茨城県",
+            "栃木県",
+            "群馬県",
+            "埼玉県",
+            "千葉県",
+            "東京都",
+            "神奈川県"
+          );
+        } else if (area == "中部地方") {
+          areaPrefecture.push(
+            "新潟県",
+            "富山県",
+            "石川県",
+            "福井県",
+            "山梨県",
+            "長野県",
+            "岐阜県",
+            "静岡県",
+            "愛知県"
+          );
+        } else if (area == "近畿地方") {
+          areaPrefecture.push(
+            "三重県",
+            "滋賀県",
+            "京都府",
+            "大阪府",
+            "兵庫県",
+            "奈良県",
+            "和歌山県"
+          );
+        } else if (area == "中国・四国地方") {
+          areaPrefecture.push(
+            "鳥取県",
+            "島根県",
+            "岡山県",
+            "広島県",
+            "山口県",
+            "徳島県",
+            "香川県",
+            "愛媛県",
+            "高知県"
+          );
+        } else if (area == "九州地方") {
+          areaPrefecture.push(
+            "福岡県",
+            "佐賀県",
+            "長崎県",
+            "熊本県",
+            "大分県",
+            "宮崎県",
+            "鹿児島県",
+            "沖縄県"
+          );
+        }
+      });
+      areaPrefecture.forEach(function(prefecture) {
+        var result = checkPrefecture.indexOf(prefecture);
+        if (result < 0) {
+          checkPrefecture.push(prefecture);
+        }
+      });
       for (var i in this.companys) {
         var company = this.companys[i];
-        this.checkNames.forEach(function(prefecture) {
+        checkPrefecture.forEach(function(prefecture) {
           if (prefecture == company.prefecture) {
             filterCompanys.push(company);
           }
         });
       }
-
       return filterCompanys;
     },
     filteredSubCompanys: function() {
       var filterCompanys = [];
-
+      var areaPrefecture = [];
+      var checkPrefecture = [];
+      this.checkNames.forEach(function(pref) {
+        checkPrefecture.push(pref);
+      });
+      this.selectAreas.forEach(function(area) {
+        if (area == "北海道地方") {
+          areaPrefecture.push("北海道");
+        } else if (area == "東北地方") {
+          areaPrefecture.push(
+            "青森県",
+            "岩手県",
+            "宮城県",
+            "秋田県",
+            "山形県",
+            "福島県"
+          );
+        } else if (area == "関東地方") {
+          areaPrefecture.push(
+            "茨城県",
+            "栃木県",
+            "群馬県",
+            "埼玉県",
+            "千葉県",
+            "東京都",
+            "神奈川県"
+          );
+        } else if (area == "中部地方") {
+          areaPrefecture.push(
+            "新潟県",
+            "富山県",
+            "石川県",
+            "福井県",
+            "山梨県",
+            "長野県",
+            "岐阜県",
+            "静岡県",
+            "愛知県"
+          );
+        } else if (area == "近畿地方") {
+          areaPrefecture.push(
+            "三重県",
+            "滋賀県",
+            "京都府",
+            "大阪府",
+            "兵庫県",
+            "奈良県",
+            "和歌山県"
+          );
+        } else if (area == "中国・四国地方") {
+          areaPrefecture.push(
+            "鳥取県",
+            "島根県",
+            "岡山県",
+            "広島県",
+            "山口県",
+            "徳島県",
+            "香川県",
+            "愛媛県",
+            "高知県"
+          );
+        } else if (area == "九州地方") {
+          areaPrefecture.push(
+            "福岡県",
+            "佐賀県",
+            "長崎県",
+            "熊本県",
+            "大分県",
+            "宮崎県",
+            "鹿児島県",
+            "沖縄県"
+          );
+        }
+      });
+      areaPrefecture.forEach(function(prefecture) {
+        var result = checkPrefecture.indexOf(prefecture);
+        if (result < 0) {
+          checkPrefecture.push(prefecture);
+        }
+      });
       for (var i in this.subCompanys) {
         var company = this.subCompanys[i];
-        this.checkNames.forEach(function(prefecture) {
+        checkPrefecture.forEach(function(prefecture) {
           if (prefecture == company.prefecture) {
             filterCompanys.push(company);
           }
         });
       }
-
       return filterCompanys;
     }
   },

@@ -55,22 +55,35 @@ export default {
         {
           displayname: "会社名",
           formText: this.$store.state.editcompany.name,
-          placeholder: "companyname"
+          placeholder: "companyname",
+          rules: [v => !!v || "CompanyName is required"]
         },
         {
           displayname: "住所",
           formText: this.$store.state.editcompany.address,
-          placeholder: "市番地"
+          placeholder: "市番地",
+          rules: [v => !!v || "Address is required"]
         },
         {
           displayname: "会社URL",
           formText: this.$store.state.editcompany.url,
-          placeholder: "url"
+          placeholder: "url",
+          rules: [
+            v => !!v || "URL is required",
+            v =>
+              /(https?|ftp)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)/.test(
+                v
+              ) || "URL must be valid"
+          ]
         },
         {
           displayname: "電話番号",
           formText: this.$store.state.editcompany.phonenumber,
-          placeholder: "000-0000"
+          placeholder: "000-0000-0000",
+          rules: [
+            v => !!v || "PhoneNumber is required",
+            v => /[0-9]+-+[0-9]+-+[0-9]+/.test(v) || "PhoneNumber must be valid"
+          ]
         }
       ],
       prefectures: [
